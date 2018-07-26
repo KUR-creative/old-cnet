@@ -20,13 +20,16 @@ parser.add_argument('--checkpoint_dir', default='', type=str,
 
 
 if __name__ == "__main__":
-    ng.get_gpus(1)
+    ng.get_gpus(1,False)
     args = parser.parse_args()
 
     model = InpaintCAModel()
     image = cv2.imread(args.image)
     mask = cv2.imread(args.mask)
+    cv2.imshow('origin',image)
+    cv2.imshow('mask',mask)
 
+    print(image.shape, mask.shape)
     assert image.shape == mask.shape
 
     h, w, _ = image.shape
@@ -59,3 +62,8 @@ if __name__ == "__main__":
         print('Model loaded.')
         result = sess.run(output)
         cv2.imwrite(args.output, result[0][:, :, ::-1])
+        #print(result)
+        #print(type(result))
+        #print(result.shape)
+        cv2.imshow('result',result[0][:, :, ::-1])
+        cv2.waitKey(0)

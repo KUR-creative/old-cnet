@@ -29,6 +29,9 @@ Example inpainting results of our method on images of natural scene (Places2), f
     * Run `python train.py`.
 3. Testing:
     * Run `python test.py --image examples/input.png --mask examples/mask.png --output examples/output.png --checkpoint model_logs/your_model_dir`.
+    * model_logs안의 체크포인트 디렉토리에서, checkpoint 파일이 있는 디렉토리만 쓸 수 있다. checkpoint 파일을 수정하면 다른 snap을 로드 할 수 있다.
+    * model\_checkpoint\_path: "snap-5100" <= 이걸 바꾸면 된다.
+
 4. Still have questions?
     * If you still have questions (e.g.: How filelist looks like? How to use multi-gpus? How to do batch testing?), please first search over closed issues. If the problem is not solved, please open a new issue.
 

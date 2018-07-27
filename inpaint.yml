@@ -1,8 +1,8 @@
 # parameters
-DATASET: mini #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: 18_07_26 #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: False
-LOG_DIR: mini #18_07_20logs
+LOG_DIR: 18_07_26 #18_07_20logs
 MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'wgan_gp'  # 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
@@ -57,6 +57,10 @@ DATA_FLIST:
   mini: [
       'i16s_train.flist',
       'i16s_valid.flist',
+  ]
+  18_07_26: [
+      '18_07_26train.flist',
+      '18_07_26valid.flist',
   ]
 
 STATIC_VIEW_SIZE: 30

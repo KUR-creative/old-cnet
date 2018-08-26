@@ -1,8 +1,8 @@
 # parameters
-DATASET: mini #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: 18_07_20crops #mini #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: False
-LOG_DIR: mini #18_07_20logs
+LOG_DIR: 18_07_20logs #mini #
 MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'wgan_gp'  # 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
@@ -65,7 +65,7 @@ HEIGHT: 128
 WIDTH: 128
 MAX_DELTA_HEIGHT: 32
 MAX_DELTA_WIDTH: 32
-BATCH_SIZE: 16
+BATCH_SIZE: 8
 VERTICAL_MARGIN: 0
 HORIZONTAL_MARGIN: 0
 

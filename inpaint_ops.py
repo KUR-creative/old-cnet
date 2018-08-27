@@ -14,6 +14,23 @@ from neuralgym.ops.summary_ops import *
 logger = logging.getLogger()
 np.random.seed(2018)
 
+@add_arg_scope
+def gated_conv(x, cnum, ksize, stride=1, rate=1, name='gconv',
+               padding='SAME', activation=tf.nn.elu, training=True):
+    assert padding in ['SYMMETRIC', 'SAME', 'REFELECT']
+    if padding == 'SYMMETRIC' or padding == 'REFELECT':
+        p = int(rate*(ksize-1)/2)
+        x = tf.pad(x, [[0,0], [p, p], [p, p], [0,0]], mode=padding)
+        padding = 'VALID'
+    #origin, ones_x, mask = tf.split(x, 3, axis=2)
+    feature = tf.layers.conv2d(x, cnum, ksize, stride, dilation_rate=rate,
+                               activation=activation, padding=padding, 
+                               name=name)
+    gating  = tf.layers.conv2d(x, cnum, ksize, stride, dilation_rate=rate,
+                               activation=tf.sigmoid, padding=padding, 
+                               name='g_'+name)
+    x = feature * gating
+    return x
 
 @add_arg_scope
 def gen_conv(x, cnum, ksize, stride=1, rate=1, name='conv',
@@ -45,6 +62,14 @@ def gen_conv(x, cnum, ksize, stride=1, rate=1, name='conv',
         activation=activation, padding=padding, name=name)
     return x
 
+@add_arg_scope
+def gated_deconv(x, cnum, name='upsample', padding='SAME', training=True):
+    with tf.variable_scope(name):
+        x = resize(x, func=tf.image.resize_nearest_neighbor)
+        x = gated_conv(
+            x, cnum, 3, 1, name=name+'_conv', padding=padding,
+            training=training)
+    return x
 
 @add_arg_scope
 def gen_deconv(x, cnum, name='upsample', padding='SAME', training=True):

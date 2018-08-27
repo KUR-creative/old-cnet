@@ -14,6 +14,7 @@ from neuralgym.ops.gan_ops import gan_wgan_loss, gradients_penalty
 from neuralgym.ops.gan_ops import random_interpolates
 
 from inpaint_ops import gen_conv, gen_deconv, dis_conv
+from inpaint_ops import gated_conv, gated_deconv
 from inpaint_ops import random_bbox, bbox2mask, local_patch
 from inpaint_ops import spatial_discounting_mask
 from inpaint_ops import resize_mask_like, contextual_attention
@@ -40,6 +41,96 @@ class InpaintCAModel(Model):
         offset_flow = None
         ones_x = tf.ones_like(x)[:, :, :, 0:1]
         x = tf.concat([x, ones_x, ones_x*mask], axis=3)
+        #images_summary(x, 'dbg', 3)
+
+        # two stage network
+        cnum = 24 # reduce? 25% of weights(according to paper).
+        with tf.variable_scope(name, reuse=reuse), \
+                arg_scope([gated_conv, gated_deconv, gen_conv], 
+                          training=training, padding=padding):
+            # stage1
+            x = gated_conv(x, cnum, 5, 1, name='conv1')
+            x = gated_conv(x, 2*cnum, 3, 2, name='conv2_downsample')
+            x = gated_conv(x, 2*cnum, 3, 1, name='conv3')
+            x = gated_conv(x, 4*cnum, 3, 2, name='conv4_downsample')
+            x = gated_conv(x, 4*cnum, 3, 1, name='conv5')
+            x = gated_conv(x, 4*cnum, 3, 1, name='conv6')
+            mask_s = resize_mask_like(mask, x)
+            x = gated_conv(x, 4*cnum, 3, rate=2, name='conv7_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=4, name='conv8_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=8, name='conv9_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=16, name='conv10_atrous')
+            x = gated_conv(x, 4*cnum, 3, 1, name='conv11')
+            x = gated_conv(x, 4*cnum, 3, 1, name='conv12')
+            x = gated_deconv(x, 2*cnum, name='conv13_upsample')
+            x = gated_conv(x, 2*cnum, 3, 1, name='conv14')
+            x = gated_deconv(x, cnum, name='conv15_upsample')
+            x = gated_conv(x, cnum//2, 3, 1, name='conv16')
+            x = gen_conv(x, 3, 3, 1, activation=None, name='conv17') 
+            #   ~~~ last layer: no activation: not gated but just conv
+            x = tf.clip_by_value(x, -1., 1.)
+            x_stage1 = x
+            # return x_stage1, None, None
+
+            # stage2, paste result as input
+            # x = tf.stop_gradient(x)
+            x = x*mask + xin*(1.-mask)
+            x.set_shape(xin.get_shape().as_list())
+            # conv branch
+            xnow = tf.concat([x, ones_x, ones_x*mask], axis=3)
+            x = gated_conv(xnow, cnum, 5, 1, name='xconv1')
+            x = gated_conv(x, cnum, 3, 2, name='xconv2_downsample')
+            x = gated_conv(x, 2*cnum, 3, 1, name='xconv3')
+            x = gated_conv(x, 2*cnum, 3, 2, name='xconv4_downsample')
+            x = gated_conv(x, 4*cnum, 3, 1, name='xconv5')
+            x = gated_conv(x, 4*cnum, 3, 1, name='xconv6')
+            x = gated_conv(x, 4*cnum, 3, rate=2, name='xconv7_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=4, name='xconv8_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=8, name='xconv9_atrous')
+            x = gated_conv(x, 4*cnum, 3, rate=16, name='xconv10_atrous')
+            x_hallu = x
+            # attention branch
+            x = gated_conv(xnow, cnum, 5, 1, name='pmconv1')
+            x = gated_conv(x, cnum, 3, 2, name='pmconv2_downsample')
+            x = gated_conv(x, 2*cnum, 3, 1, name='pmconv3')
+            x = gated_conv(x, 4*cnum, 3, 2, name='pmconv4_downsample')
+            x = gated_conv(x, 4*cnum, 3, 1, name='pmconv5')
+            x = gated_conv(x, 4*cnum, 3, 1, name='pmconv6',
+                         activation=tf.nn.relu)
+            x, offset_flow = contextual_attention(x, x, mask_s, 3, 1, rate=2)
+            x = gated_conv(x, 4*cnum, 3, 1, name='pmconv9')
+            x = gated_conv(x, 4*cnum, 3, 1, name='pmconv10')
+            pm = x
+            x = tf.concat([x_hallu, pm], axis=3)
+
+            x = gated_conv(x, 4*cnum, 3, 1, name='allconv11')
+            x = gated_conv(x, 4*cnum, 3, 1, name='allconv12')
+            x = gated_deconv(x, 2*cnum, name='allconv13_upsample')
+            x = gated_conv(x, 2*cnum, 3, 1, name='allconv14')
+            x = gated_deconv(x, cnum, name='allconv15_upsample')
+            x = gated_conv(x, cnum//2, 3, 1, name='allconv16')
+            x = gen_conv(x, 3, 3, 1, activation=None, name='allconv17')
+            #   ~~~ last layer: no activation: not gated but just conv
+            x_stage2 = tf.clip_by_value(x, -1., 1.)
+        return x_stage1, x_stage2, offset_flow
+
+
+    '''
+    def build_inpaint_net(self, x, mask, config=None, reuse=False,
+                          training=True, padding='SAME', name='inpaint_net'):
+        """Inpaint network.
+
+        Args:
+            x: incomplete image, [-1, 1]
+            mask: mask region {0, 1}
+        Returns:
+            [-1, 1] as predicted image
+        """
+        xin = x
+        offset_flow = None
+        ones_x = tf.ones_like(x)[:, :, :, 0:1]
+        x = tf.concat([x, ones_x, ones_x*mask], axis=3)
+        #images_summary(x, 'dbg', 3)
 
         # two stage network
         cnum = 32
@@ -109,6 +200,7 @@ class InpaintCAModel(Model):
             x = gen_conv(x, 3, 3, 1, activation=None, name='allconv17')
             x_stage2 = tf.clip_by_value(x, -1., 1.)
         return x_stage1, x_stage2, offset_flow
+        '''
 
     def build_wgan_local_discriminator(self, x, reuse=False, training=True):
         with tf.variable_scope('discriminator_local', reuse=reuse):
@@ -309,3 +401,6 @@ class InpaintCAModel(Model):
         # apply mask and reconstruct
         batch_complete = batch_predict*masks + batch_incomplete*(1-masks)
         return batch_complete
+
+
+

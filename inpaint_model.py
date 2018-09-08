@@ -18,6 +18,7 @@ from inpaint_ops import gated_conv, gated_deconv
 from inpaint_ops import random_bbox, bbox2mask, local_patch
 from inpaint_ops import spatial_discounting_mask
 from inpaint_ops import resize_mask_like, contextual_attention
+from inpaint_ops import conv2d_spectral_norm, gan_hinge_loss
 
 
 logger = logging.getLogger()
@@ -233,16 +234,30 @@ class InpaintCAModel(Model):
             dout_global = tf.layers.dense(dglobal, 1, name='dout_global_fc')
             return dout_local, dout_global
 
+    def build_sn_patch_gan_discriminator(self, x, reuse=False, training=True):
+        with tf.variable_scope('discriminator', reuse=reuse):
+            cnum = 64            #(input, num_filters, kernel_size, stride, ...
+            x = conv2d_spectral_norm(x,   cnum, 5, 1, padding='SAME', name='sn_conv1') 
+            x = conv2d_spectral_norm(x, 2*cnum, 5, 2, padding='SAME', name='sn_conv2') 
+            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv3') 
+            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv4') 
+            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv5') 
+            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv6') 
+            return x
+
     def build_graph_with_losses(self, batch_data, config, training=True,
                                 summary=False, reuse=False):
         batch_pos = batch_data / 127.5 - 1.
+
         # generate mask, 1 represents masked point
         bbox = random_bbox(config)
         mask = bbox2mask(bbox, config, name='mask_c')
+
         batch_incomplete = batch_pos*(1.-mask)
         x1, x2, offset_flow = self.build_inpaint_net(
             batch_incomplete, mask, config, reuse=reuse, training=training,
             padding=config.PADDING)
+
         if config.PRETRAIN_COARSE_NETWORK:
             batch_predicted = x1
             logger.info('Set batch_predicted to x1.')
@@ -252,6 +267,7 @@ class InpaintCAModel(Model):
         losses = {}
         # apply mask and complete image
         batch_complete = batch_predicted*mask + batch_incomplete*(1.-mask)
+
         # local patches
         local_patch_batch_pos = local_patch(batch_pos, bbox)
         local_patch_batch_predicted = local_patch(batch_predicted, bbox)
@@ -259,13 +275,16 @@ class InpaintCAModel(Model):
         local_patch_x2 = local_patch(x2, bbox)
         local_patch_batch_complete = local_patch(batch_complete, bbox)
         local_patch_mask = local_patch(mask, bbox)
+
         l1_alpha = config.COARSE_L1_ALPHA
         losses['l1_loss'] = l1_alpha * tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x1)*spatial_discounting_mask(config))
         if not config.PRETRAIN_COARSE_NETWORK:
             losses['l1_loss'] += tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x2)*spatial_discounting_mask(config))
+
         losses['ae_loss'] = l1_alpha * tf.reduce_mean(tf.abs(batch_pos - x1) * (1.-mask))
         if not config.PRETRAIN_COARSE_NETWORK:
             losses['ae_loss'] += tf.reduce_mean(tf.abs(batch_pos - x2) * (1.-mask))
+
         losses['ae_loss'] /= tf.reduce_mean(1.-mask)
         if summary:
             scalar_summary('losses/l1_loss', losses['l1_loss'])
@@ -315,16 +334,25 @@ class InpaintCAModel(Model):
                 scalar_summary('gan_wgan_loss/gp_loss', losses['gp_loss'])
                 scalar_summary('gan_wgan_loss/gp_penalty_local', penalty_local)
                 scalar_summary('gan_wgan_loss/gp_penalty_global', penalty_global)
+        elif config.GAN == 'sn_patch_gan':
+            Dsn_Gz= self.build_sn_patch_gan_discriminator(
+                            batch_complete, training=training, reuse=tf.AUTO_REUSE) 
+            Dsn_x = self.build_sn_patch_gan_discriminator(
+                            batch_pos, training=training, reuse=tf.AUTO_REUSE)
+            losses['g_loss'], losses['d_loss'] = gan_hinge_loss(Dsn_Gz, Dsn_x)
+            #if summary and not config.PRETRAIN_COARSE_NETWORK:
+                #gradients_summary(g_loss_local, batch_predicted, name='g_loss_local')
+                #gradients_summary(g_loss_global, batch_predicted, name='g_loss_global')
 
-        if summary and not config.PRETRAIN_COARSE_NETWORK:
+        #if summary and not config.PRETRAIN_COARSE_NETWORK:
             # summary the magnitude of gradients from different losses w.r.t. predicted image
-            gradients_summary(losses['g_loss'], batch_predicted, name='g_loss')
-            gradients_summary(losses['g_loss'], x1, name='g_loss_to_x1')
-            gradients_summary(losses['g_loss'], x2, name='g_loss_to_x2')
-            gradients_summary(losses['l1_loss'], x1, name='l1_loss_to_x1')
-            gradients_summary(losses['l1_loss'], x2, name='l1_loss_to_x2')
-            gradients_summary(losses['ae_loss'], x1, name='ae_loss_to_x1')
-            gradients_summary(losses['ae_loss'], x2, name='ae_loss_to_x2')
+            #gradients_summary(losses['g_loss'], batch_predicted, name='g_loss')
+            #gradients_summary(losses['g_loss'], x1, name='g_loss_to_x1')
+            #gradients_summary(losses['g_loss'], x2, name='g_loss_to_x2')
+            #gradients_summary(losses['l1_loss'], x1, name='l1_loss_to_x1')
+            #gradients_summary(losses['l1_loss'], x2, name='l1_loss_to_x2')
+            #gradients_summary(losses['ae_loss'], x1, name='ae_loss_to_x1')
+            #gradients_summary(losses['ae_loss'], x2, name='ae_loss_to_x2')
         if config.PRETRAIN_COARSE_NETWORK:
             losses['g_loss'] = 0
         else:

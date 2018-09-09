@@ -335,11 +335,11 @@ class InpaintCAModel(Model):
                 scalar_summary('gan_wgan_loss/gp_penalty_local', penalty_local)
                 scalar_summary('gan_wgan_loss/gp_penalty_global', penalty_global)
         elif config.GAN == 'sn_patch_gan':
-            Dsn_Gz= self.build_sn_patch_gan_discriminator(
+            Dsn_Gz= self.build_sn_patch_gan_discriminator( #fake
                             batch_complete, training=training, reuse=tf.AUTO_REUSE) 
-            Dsn_x = self.build_sn_patch_gan_discriminator(
+            Dsn_x = self.build_sn_patch_gan_discriminator( #real
                             batch_pos, training=training, reuse=tf.AUTO_REUSE)
-            losses['g_loss'], losses['d_loss'] = gan_hinge_loss(Dsn_Gz, Dsn_x)
+            losses['g_loss'], losses['d_loss'] = gan_hinge_loss(Dsn_x, Dsn_Gz)
             #if summary and not config.PRETRAIN_COARSE_NETWORK:
                 #gradients_summary(g_loss_local, batch_predicted, name='g_loss_local')
                 #gradients_summary(g_loss_global, batch_predicted, name='g_loss_global')

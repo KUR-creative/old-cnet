@@ -6,7 +6,7 @@
 #LOG_DIR: '180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET: 180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: 18_07_26imgs #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
 LOG_DIR: '180903' #(name of dataset) '18_07_26' #18_07_20logs
@@ -33,7 +33,7 @@ VIZ_MAX_OUT: 10
 GRADS_SUMMARY: False
 GRADIENT_CLIP: False
 GRADIENT_CLIP_VALUE: 0.1
-VAL_PSTEPS: 500 #1000
+VAL_PSTEPS: 250 #500 #1000
 
 # data
 DATA_FLIST:

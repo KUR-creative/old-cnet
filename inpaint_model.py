@@ -234,15 +234,29 @@ class InpaintCAModel(Model):
             dout_global = tf.layers.dense(dglobal, 1, name='dout_global_fc')
             return dout_local, dout_global
 
-    def build_sn_patch_gan_discriminator(self, x, reuse=False, training=True):
+    def build_sn_patch_gan_discriminator(self, x, mask, reuse=False, training=True):
+        #ones_x = tf.ones_like(x)[:, :, :, 0:1]
+        #x = tf.concat([x, ones_x, ones_x*mask], axis=3)
         with tf.variable_scope('discriminator', reuse=reuse):
             cnum = 64            #(input, num_filters, kernel_size, stride, ...
-            x = conv2d_spectral_norm(x,   cnum, 5, 1, padding='SAME', name='sn_conv1') 
-            x = conv2d_spectral_norm(x, 2*cnum, 5, 2, padding='SAME', name='sn_conv2') 
-            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv3') 
-            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv4') 
-            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv5') 
-            x = conv2d_spectral_norm(x, 4*cnum, 5, 2, padding='SAME', name='sn_conv6') 
+            x = conv2d_spectral_norm(x,   cnum, kernel_size=5, strides=1, 
+                        activation=tf.nn.relu, 
+                        padding='SAME', name='sn_conv1') 
+            x = conv2d_spectral_norm(x, 2*cnum, kernel_size=5, strides=2,  
+                        activation=tf.nn.relu,
+                        padding='SAME', name='sn_conv2') 
+            x = conv2d_spectral_norm(x, 4*cnum, kernel_size=5, strides=2,  
+                        activation=tf.nn.relu,
+                        padding='SAME', name='sn_conv3') 
+            x = conv2d_spectral_norm(x, 4*cnum, kernel_size=5, strides=2,  
+                        activation=tf.nn.relu,
+                        padding='SAME', name='sn_conv4') 
+            x = conv2d_spectral_norm(x, 4*cnum, kernel_size=5, strides=2,  
+                        activation=tf.nn.relu,
+                        padding='SAME', name='sn_conv5') 
+            x = conv2d_spectral_norm(x, 4*cnum, kernel_size=5, strides=2,  
+                        activation=tf.nn.relu,
+                        padding='SAME', name='sn_conv6') 
             return x
 
     def build_graph_with_losses(self, batch_data, config, training=True,
@@ -336,9 +350,9 @@ class InpaintCAModel(Model):
                 scalar_summary('gan_wgan_loss/gp_penalty_global', penalty_global)
         elif config.GAN == 'sn_patch_gan':
             Dsn_Gz= self.build_sn_patch_gan_discriminator( #fake
-                            batch_complete, training=training, reuse=tf.AUTO_REUSE) 
+                            batch_complete, mask, training=training, reuse=tf.AUTO_REUSE) 
             Dsn_x = self.build_sn_patch_gan_discriminator( #real
-                            batch_pos, training=training, reuse=tf.AUTO_REUSE)
+                            batch_pos, mask, training=training, reuse=tf.AUTO_REUSE)
             losses['g_loss'], losses['d_loss'] = gan_hinge_loss(Dsn_x, Dsn_Gz)
             #if summary and not config.PRETRAIN_COARSE_NETWORK:
                 #gradients_summary(g_loss_local, batch_predicted, name='g_loss_local')

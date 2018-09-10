@@ -94,7 +94,6 @@ def gen_deconv(x, cnum, name='upsample', padding='SAME', training=True):
             training=training)
     return x
 
-
 @add_arg_scope
 def dis_conv(x, cnum, ksize=5, stride=2, name='conv', training=True):
     """Define conv for discriminator.

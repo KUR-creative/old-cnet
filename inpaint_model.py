@@ -291,9 +291,10 @@ class InpaintCAModel(Model):
         local_patch_mask = local_patch(mask, bbox)
 
         l1_alpha = config.COARSE_L1_ALPHA
-        losses['l1_loss'] = l1_alpha * tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x1)*spatial_discounting_mask(config))
-        if not config.PRETRAIN_COARSE_NETWORK:
-            losses['l1_loss'] += tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x2)*spatial_discounting_mask(config))
+        # remove L1 loss: it's for local mask.
+        #losses['l1_loss'] = l1_alpha * tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x1)*spatial_discounting_mask(config))
+        #if not config.PRETRAIN_COARSE_NETWORK:
+            #losses['l1_loss'] += tf.reduce_mean(tf.abs(local_patch_batch_pos - local_patch_x2)*spatial_discounting_mask(config))
 
         losses['ae_loss'] = l1_alpha * tf.reduce_mean(tf.abs(batch_pos - x1) * (1.-mask))
         if not config.PRETRAIN_COARSE_NETWORK:
@@ -301,7 +302,7 @@ class InpaintCAModel(Model):
 
         losses['ae_loss'] /= tf.reduce_mean(1.-mask)
         if summary:
-            scalar_summary('losses/l1_loss', losses['l1_loss'])
+            #scalar_summary('losses/l1_loss', losses['l1_loss'])
             scalar_summary('losses/ae_loss', losses['ae_loss'])
             viz_img = [batch_pos, batch_incomplete, batch_complete]
             if offset_flow is not None:
@@ -371,8 +372,8 @@ class InpaintCAModel(Model):
             losses['g_loss'] = 0
         else:
             losses['g_loss'] = config.GAN_LOSS_ALPHA * losses['g_loss']
-        losses['g_loss'] += config.L1_LOSS_ALPHA * losses['l1_loss']
-        logger.info('Set L1_LOSS_ALPHA to %f' % config.L1_LOSS_ALPHA)
+        #losses['g_loss'] += config.L1_LOSS_ALPHA * losses['l1_loss']
+        #logger.info('Set L1_LOSS_ALPHA to %f' % config.L1_LOSS_ALPHA)
         logger.info('Set GAN_LOSS_ALPHA to %f' % config.GAN_LOSS_ALPHA)
         if config.AE_LOSS:
             losses['g_loss'] += config.AE_LOSS_ALPHA * losses['ae_loss']

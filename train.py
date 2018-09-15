@@ -77,7 +77,7 @@ if __name__ == "__main__":
         gradient_processor = None
 
     # log dir
-    print('wtf?? :', ng.date_uid(), socket.gethostname(), config.DATASET, 'MASKED' if config.GAN_WITH_MASK else 'NORMAL', config.GAN,config.LOG_DIR)
+    print('?? :', ng.date_uid(), socket.gethostname(), config.DATASET, 'MASKED' if config.GAN_WITH_MASK else 'NORMAL', config.GAN,config.LOG_DIR)
     log_prefix = 'model_logs/' + '_'.join([
         ng.date_uid(), socket.gethostname(), config.DATASET,
         'MASKED' if config.GAN_WITH_MASK else 'NORMAL',

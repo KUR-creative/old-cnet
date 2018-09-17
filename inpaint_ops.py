@@ -151,7 +151,8 @@ def random_bbox(config):
     return (t, l, h, w)
 
 
-def bbox2mask(bbox, config, name='mask'):
+mask_idx = 0
+def bbox2mask(bbox, config, name='mask', masks=None):
     """Generate mask tensor from bbox.
 
     Args:
@@ -170,15 +171,29 @@ def bbox2mask(bbox, config, name='mask'):
         mask[:, bbox[0]+h:bbox[0]+bbox[2]-h,
              bbox[1]+w:bbox[1]+bbox[3]-w, :] = 1.
         return mask
-    def free_form_mask(a):
-        pass
+    def manga_mask(h,w):
+        origin = masks[mask_idx]
+        mask_idx = (mask_idx + 1) % len(masks)
+        # get mask from masks
+        for _ in range(20): # tolerance
+            t = np.random.randint(origin.shape[0] - h - 1)
+            l = np.random.randint(origin.shape[1] - w - 1)
+            mask = origin[t:t+h, l:l+w]
+            if np.sum(mask) > 12200: #256**2/5.37
+                return mask.reshape((1,h,w,1))
+        mask = np.zeros((1,h,w,1), np.float32)
+        t = np.random.randint(h - config.HEIGHT)
+        l = np.random.randint(w - config.WIDTH)
+        mask[:, t:t+config.HEIGHT, l:l+config.WIDTH, :] = 1 
+        return mask
 
     with tf.variable_scope(name), tf.device('/cpu:0'):
         img_shape = config.IMG_SHAPES
         height = img_shape[0]
         width = img_shape[1]
         if config.FREE_FORM_MASK:
-            pass
+            mask = tf.py_func(manga_mask, [height, width],
+                              tf.float32, stateful=False)
         else:
             mask = tf.py_func(
                 npmask,

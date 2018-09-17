@@ -45,33 +45,33 @@ if __name__ == "__main__":
         fnames, config.IMG_SHAPES, random_crop=config.RANDOM_CROP)
     images = data.data_pipeline(config.BATCH_SIZE)
 
-    timer = utils.ElapsedTimer('mask load')
-    #print(config.MANGA_MASK_DIR)
-    mask_paths = utils.file_paths(config.MANGA_MASK_DIR)
     masks = []
-    num_all = 0
-    for path in mask_paths:
-        num_all += 1
+    if config.FREE_FORM_MASK:
+        timer = utils.ElapsedTimer('mask load')
+        #print(config.MANGA_MASK_DIR)
+        mask_paths = utils.file_paths(config.MANGA_MASK_DIR)
+        num_all = 0
+        for path in mask_paths:
+            num_all += 1
 
-        mask = cv2.imread(path,0)
-        if mask is None:
-            continue
-        mask = (mask > 100).astype(np.float32)
+            mask = cv2.imread(path,0)
+            if mask is None:
+                continue
+            mask = (mask > 100).astype(np.float32)
 
-        h,w = mask.shape[:2]
-        if np.sum(mask) < h*w//40: # if mask is too sparse,
-            continue
-        masks.append(mask)
+            h,w = mask.shape[:2]
+            if np.sum(mask) < h*w//40: # if mask is too sparse,
+                continue
+            masks.append(mask)
 
-    timer.elapsed_time()
-    print('# masks = ', len(masks), '/', num_all, 
-          'ratio =', len(masks) / num_all, )
-
+        timer.elapsed_time()
+        print('# masks = ', len(masks), '/', num_all, 
+              'ratio =', len(masks) / num_all, )
 
     # main model
     model = InpaintCAModel()
     g_vars, d_vars, losses = model.build_graph_with_losses(
-        images, config=config)
+        images, config=config, masks=masks)
 
     # validation images
     if config.VAL:

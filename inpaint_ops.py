@@ -127,17 +127,27 @@ def random_bbox(config):
         tuple: (top, left, height, width)
 
     """
-    img_shape = config.IMG_SHAPES
-    img_height = img_shape[0]
-    img_width = img_shape[1]
-    maxt = img_height - config.VERTICAL_MARGIN - config.HEIGHT
-    maxl = img_width - config.HORIZONTAL_MARGIN - config.WIDTH
-    t = tf.random_uniform(
-        [], minval=config.VERTICAL_MARGIN, maxval=maxt, dtype=tf.int32)
-    l = tf.random_uniform(
-        [], minval=config.HORIZONTAL_MARGIN, maxval=maxl, dtype=tf.int32)
-    h = tf.constant(config.HEIGHT)
-    w = tf.constant(config.WIDTH)
+    if config.FREE_FORM_MASK:
+        # use image size mask.
+        img_shape = config.IMG_SHAPES
+        img_height = img_shape[0]
+        img_width = img_shape[1]
+        t = tf.constant(0)
+        l = tf.constant(0)
+        h = tf.constant(img_height)
+        w = tf.constant(img_width)
+    else:
+        img_shape = config.IMG_SHAPES
+        img_height = img_shape[0]
+        img_width = img_shape[1]
+        maxt = img_height - config.VERTICAL_MARGIN - config.HEIGHT
+        maxl = img_width - config.HORIZONTAL_MARGIN - config.WIDTH
+        t = tf.random_uniform(
+            [], minval=config.VERTICAL_MARGIN, maxval=maxt, dtype=tf.int32)
+        l = tf.random_uniform(
+            [], minval=config.HORIZONTAL_MARGIN, maxval=maxl, dtype=tf.int32)
+        h = tf.constant(config.HEIGHT)
+        w = tf.constant(config.WIDTH)
     return (t, l, h, w)
 
 
@@ -160,15 +170,21 @@ def bbox2mask(bbox, config, name='mask'):
         mask[:, bbox[0]+h:bbox[0]+bbox[2]-h,
              bbox[1]+w:bbox[1]+bbox[3]-w, :] = 1.
         return mask
+    def free_form_mask(a):
+        pass
+
     with tf.variable_scope(name), tf.device('/cpu:0'):
         img_shape = config.IMG_SHAPES
         height = img_shape[0]
         width = img_shape[1]
-        mask = tf.py_func(
-            npmask,
-            [bbox, height, width,
-             config.MAX_DELTA_HEIGHT, config.MAX_DELTA_WIDTH],
-            tf.float32, stateful=False)
+        if config.FREE_FORM_MASK:
+            pass
+        else:
+            mask = tf.py_func(
+                npmask,
+                [bbox, height, width,
+                 config.MAX_DELTA_HEIGHT, config.MAX_DELTA_WIDTH],
+                tf.float32, stateful=False)
         mask.set_shape([1] + [height, width] + [1])
     return mask
 

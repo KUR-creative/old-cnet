@@ -6,15 +6,15 @@
 #LOG_DIR: '180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET: 180903_7624imgs #18_07_26imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: 18_07_20crops #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
-LOG_DIR: '180903' #(name of dataset) '18_07_26' #18_07_20logs
+LOG_DIR: 'TEST' #'180903' #(name of dataset) '18_07_26' #18_07_20logs
 MODEL_RESTORE: '20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'sn_patch_gan' # 'wgan_gp', 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
 PRETRAIN_COARSE_NETWORK: False
-GAN_LOSS_ALPHA: 1 #0.001  # dcgan: 0.0008, wgan: 0.0005, onegan: 0.001
+GAN_LOSS_ALPHA: 1 # sn_patch_gan: 1  # dcgan: 0.0008, wgan: 0.0005, onegan: 0.001
 WGAN_GP_LAMBDA: 10
 COARSE_L1_ALPHA: 1.2 #1.2
 L1_LOSS_ALPHA: 1.0 #1.2
@@ -33,7 +33,7 @@ VIZ_MAX_OUT: 10
 GRADS_SUMMARY: False
 GRADIENT_CLIP: False
 GRADIENT_CLIP_VALUE: 0.1
-VAL_PSTEPS: 500 #250 #1000
+VAL_PSTEPS: 20 #500 #250 #1000
 
 # data
 DATA_FLIST:
@@ -104,3 +104,6 @@ TV_LOSS_ALPHA: 0.
 FEATURE_LOSS_ALPHA: 0.01
 GRAMS_LOSS_ALPHA: 50
 SPATIAL_DISCOUNTING_GAMMA: 0.9
+
+FREE_FORM_MASK: False
+MANGA_MASK_DIR: 'test_mask'

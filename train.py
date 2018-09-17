@@ -7,7 +7,9 @@ import tensorflow as tf
 import neuralgym as ng
 
 from inpaint_model import InpaintCAModel
-
+import utils
+import cv2
+import numpy as np
 
 logger = logging.getLogger()
 
@@ -32,9 +34,9 @@ def multigpu_graph_def(model, data, config, gpu_id=0, loss_type='g'):
 if __name__ == "__main__":
     config = ng.Config('inpaint.yml')
     if config.GPU_ID != -1:
-        ng.set_gpus(config.GPU_ID)
+        ng.set_gpus(config.GPU_ID) 
     else:
-        ng.get_gpus(config.NUM_GPUS)
+        ng.get_gpus(config.NUM_GPUS,False)# TODO
 
     # training data
     with open(config.DATA_FLIST[config.DATASET][0]) as f:
@@ -42,6 +44,29 @@ if __name__ == "__main__":
     data = ng.data.DataFromFNames(
         fnames, config.IMG_SHAPES, random_crop=config.RANDOM_CROP)
     images = data.data_pipeline(config.BATCH_SIZE)
+
+    timer = utils.ElapsedTimer('mask load')
+    #print(config.MANGA_MASK_DIR)
+    mask_paths = utils.file_paths(config.MANGA_MASK_DIR)
+    masks = []
+    num_all = 0
+    for path in mask_paths:
+        num_all += 1
+
+        mask = cv2.imread(path,0)
+        if mask is None:
+            continue
+        mask = (mask > 100).astype(np.float32)
+
+        h,w = mask.shape[:2]
+        if np.sum(mask) < h*w//40: # if mask is too sparse,
+            continue
+        masks.append(mask)
+
+    timer.elapsed_time()
+    print('# masks = ', len(masks), '/', num_all, 
+          'ratio =', len(masks) / num_all, )
+
 
     # main model
     model = InpaintCAModel()

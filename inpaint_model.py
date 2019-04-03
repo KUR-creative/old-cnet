@@ -23,6 +23,8 @@ from inpaint_ops import conv2d_spectral_norm, gan_hinge_loss
 
 logger = logging.getLogger()
 
+import os
+import inspect
 
 class InpaintCAModel(Model):
     def __init__(self):
@@ -265,6 +267,7 @@ class InpaintCAModel(Model):
 
         # generate mask, 1 represents masked point
         bbox = random_bbox(config)
+
         mask = bbox2mask(bbox, config, name='mask_c', masks=masks)
 
         batch_incomplete = batch_pos*(1.-mask)
@@ -377,14 +380,14 @@ class InpaintCAModel(Model):
             #losses['g_loss'] += config.AE_LOSS_ALPHA * losses['ae_loss']
             #logger.info('Set AE_LOSS_ALPHA to %f' % config.AE_LOSS_ALPHA)
 
-    def build_infer_graph(self, batch_data, config, bbox=None, name='val'):
+    def build_infer_graph(self, batch_data, config, bbox=None, name='val', masks=None):
         """
         """
         config.MAX_DELTA_HEIGHT = 0
         config.MAX_DELTA_WIDTH = 0
         if bbox is None:
             bbox = random_bbox(config)
-        mask = bbox2mask(bbox, config, name=name+'mask_c')
+        mask = bbox2mask(bbox, config, name=name+'mask_c', masks=masks)
         batch_pos = batch_data / 127.5 - 1.
         edges = None
         batch_incomplete = batch_pos*(1.-mask)
@@ -411,13 +414,13 @@ class InpaintCAModel(Model):
             name+'_raw_incomplete_complete', config.VIZ_MAX_OUT)
         return batch_complete
 
-    def build_static_infer_graph(self, batch_data, config, name):
+    def build_static_infer_graph(self, batch_data, config, name, masks=None):
         """
         """
         # generate mask, 1 represents masked point
         bbox = (tf.constant(config.HEIGHT//2), tf.constant(config.WIDTH//2),
                 tf.constant(config.HEIGHT), tf.constant(config.WIDTH))
-        return self.build_infer_graph(batch_data, config, bbox, name)
+        return self.build_infer_graph(batch_data, config, bbox, name, masks)
 
 
     def build_server_graph(self, batch_data, reuse=False, is_training=False):

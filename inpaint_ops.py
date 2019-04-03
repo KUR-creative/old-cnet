@@ -164,6 +164,7 @@ def bbox2mask(bbox, config, name='mask', masks=None):
         tf.Tensor: output with shape [1, H, W, 1]
 
     """
+
     def npmask(bbox, height, width, delta_h, delta_w):
         mask = np.zeros((1, height, width, 1), np.float32)
         h = np.random.randint(delta_h//2+1)
@@ -172,8 +173,11 @@ def bbox2mask(bbox, config, name='mask', masks=None):
              bbox[1]+w:bbox[1]+bbox[3]-w, :] = 1.
         return mask
     def manga_mask(h,w):
+        global mask_idx
+
         origin = masks[mask_idx]
         mask_idx = (mask_idx + 1) % len(masks)
+        #print(mask_idx)
         # get mask from masks
         for _ in range(20): # tolerance
             t = np.random.randint(origin.shape[0] - h - 1)

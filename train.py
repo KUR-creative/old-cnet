@@ -14,15 +14,15 @@ import numpy as np
 logger = logging.getLogger()
 
 
-def multigpu_graph_def(model, data, config, gpu_id=0, loss_type='g'):
+def multigpu_graph_def(model, data, config, gpu_id=0, loss_type='g', masks=None):
     with tf.device('/cpu:0'):
         images = data.data_pipeline(config.BATCH_SIZE)
     if gpu_id == 0 and loss_type == 'g':
         _, _, losses = model.build_graph_with_losses(
-            images, config, summary=True, reuse=True)
+            images, config, summary=True, reuse=True, masks=masks)
     else:
         _, _, losses = model.build_graph_with_losses(
-            images, config, reuse=True)
+            images, config, reuse=True, masks=masks)
     if loss_type == 'g':
         return losses['g_loss']
     elif loss_type == 'd':
@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 static_fnames, config.IMG_SHAPES, nthreads=1,
                 random_crop=config.RANDOM_CROP).data_pipeline(1)
             static_inpainted_images = model.build_static_infer_graph(
-                static_images, config, name='static_view/%d' % i)
+                static_images, config, name='static_view/%d' % i, masks=masks)
 
     # training settings
     lr = tf.get_variable(
@@ -116,8 +116,10 @@ if __name__ == "__main__":
         var_list=d_vars,
         max_iters=5,
         graph_def=multigpu_graph_def,
-        graph_def_kwargs={
-            'model': model, 'data': data, 'config': config, 'loss_type': 'd'},
+        graph_def_kwargs=dict(
+            model=model, data=data, config=config, loss_type='d',
+            masks=masks
+        ),
     )
 
     # train generator with primary trainer
@@ -128,8 +130,10 @@ if __name__ == "__main__":
         graph_def=multigpu_graph_def,
         grads_summary=config.GRADS_SUMMARY,
         gradient_processor=gradient_processor,
-        graph_def_kwargs={
-            'model': model, 'data': data, 'config': config, 'loss_type': 'g'},
+        graph_def_kwargs=dict(
+            model=model, data=data, config=config, loss_type='g',
+            masks=masks
+        ),
         spe=config.TRAIN_SPE,
         log_dir=log_prefix,
     )

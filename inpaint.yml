@@ -6,7 +6,7 @@
 #LOG_DIR: '180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET: mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: 180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
 LOG_DIR: 'TEST' #'180903' #(name of dataset) '18_07_26' #18_07_20logs
@@ -33,7 +33,7 @@ VIZ_MAX_OUT: 10
 GRADS_SUMMARY: False
 GRADIENT_CLIP: False
 GRADIENT_CLIP_VALUE: 0.1
-VAL_PSTEPS: 20 #500 #250 #1000
+VAL_PSTEPS: 10 #500 #250 #1000
 
 # data
 DATA_FLIST:
@@ -84,7 +84,7 @@ HEIGHT: 128
 WIDTH: 128
 MAX_DELTA_HEIGHT: 32 #32
 MAX_DELTA_WIDTH: 32 #32
-BATCH_SIZE: 16
+BATCH_SIZE: 8 #16
 VERTICAL_MARGIN: 0
 HORIZONTAL_MARGIN: 0
 
@@ -105,5 +105,5 @@ FEATURE_LOSS_ALPHA: 0.01
 GRAMS_LOSS_ALPHA: 50
 SPATIAL_DISCOUNTING_GAMMA: 0.9
 
-FREE_FORM_MASK: False
+FREE_FORM_MASK: True #False
 MANGA_MASK_DIR: 'test_mask'

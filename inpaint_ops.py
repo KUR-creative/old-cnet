@@ -151,6 +151,7 @@ def random_bbox(config):
     return (t, l, h, w)
 
 
+import os
 mask_idx = 0
 def bbox2mask(bbox, config, name='mask', masks=None):
     """Generate mask tensor from bbox.
@@ -177,7 +178,7 @@ def bbox2mask(bbox, config, name='mask', masks=None):
 
         origin = masks[mask_idx]
         mask_idx = (mask_idx + 1) % len(masks)
-        #print(mask_idx)
+        #print('pid:', os.getpid(), 'mask idx:', mask_idx)
         # get mask from masks
         for _ in range(20): # tolerance
             t = np.random.randint(origin.shape[0] - h - 1)
@@ -197,13 +198,14 @@ def bbox2mask(bbox, config, name='mask', masks=None):
         width = img_shape[1]
         if config.FREE_FORM_MASK:
             mask = tf.py_func(manga_mask, [height, width],
-                              tf.float32, stateful=False)
+                              tf.float32, stateful=True)
+                              #tf.float32, stateful=False)
         else:
             mask = tf.py_func(
                 npmask,
                 [bbox, height, width,
                  config.MAX_DELTA_HEIGHT, config.MAX_DELTA_WIDTH],
-                tf.float32, stateful=False)
+                tf.float32, stateful=False) #stateful=True)
         mask.set_shape([1] + [height, width] + [1])
     return mask
 

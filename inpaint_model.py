@@ -23,9 +23,6 @@ from inpaint_ops import conv2d_spectral_norm, gan_hinge_loss
 
 logger = logging.getLogger()
 
-import os
-import inspect
-
 class InpaintCAModel(Model):
     def __init__(self):
         super().__init__('InpaintCAModel')
@@ -295,7 +292,6 @@ class InpaintCAModel(Model):
 
         if summary:
             scalar_summary('losses/l1_loss', losses['l1_loss'])
-            #scalar_summary('losses/ae_loss', losses['ae_loss'])
             viz_img = [batch_pos, batch_incomplete, batch_complete]
             if offset_flow is not None:
                 viz_img.append(

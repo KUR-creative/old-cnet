@@ -6,7 +6,7 @@
 #LOG_DIR: 190411expr#'180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET: db190414crops #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: db_fmd_cleans190415 #db190414crops #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
 LOG_DIR: 'trainHN' #'180903' #(name of dataset) '18_07_26' #18_07_20logs
@@ -38,6 +38,10 @@ VAL_PSTEPS: 1000 #2 #10 #500 #250 #1000
 # data
 DATA_FLIST:
   # https://github.com/JiahuiYu/progressive_growing_of_gans_tf
+  db_fmd_cleans190415: [
+    './flists/db_fmd_cleans190414_train.flist', #  last 80% of db_fmd_cleans190414.json
+    './flists/db_fmd_cleans190414_valid.flist'  # first 20% of db_fmd_cleans190414.json (4000 imgs)
+  ]
   db190414crops: [
     './flists/190414crops_train.flist', # text = H,N 
     './flists/190414crops_valid.flist'  # text = O

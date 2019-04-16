@@ -62,6 +62,10 @@ if __name__ == "__main__":
             h,w = mask.shape[:2]
             if np.sum(mask) < h*w//40: # if mask is too sparse,
                 continue
+
+            min_h,min_w = config.IMG_SHAPES[:2]
+            if h < min_h or w < min_w:
+                continue
             masks.append(mask)
 
         timer.elapsed_time()

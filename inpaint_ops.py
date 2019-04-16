@@ -173,10 +173,12 @@ def bbox2mask(bbox, config, name='mask', masks=None):
         mask[:, bbox[0]+h:bbox[0]+bbox[2]-h,
              bbox[1]+w:bbox[1]+bbox[3]-w, :] = 1.
         return mask
+
     def manga_mask(h,w):
         global mask_idx
 
         origin = masks[mask_idx]
+        #print(origin.shape[0], h, origin.shape[0] - h - 1, end='\t'); print(origin.shape[1], w, origin.shape[1] - w - 1)
         mask_idx = (mask_idx + 1) % len(masks)
         #print('pid:', os.getpid(), 'mask idx:', mask_idx)
         # get mask from masks

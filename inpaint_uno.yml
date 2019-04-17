@@ -6,11 +6,11 @@
 #LOG_DIR: 190411expr#'180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET:  #TODO #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: db_fmd_cleans190415 #db190414crops #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
-LOG_DIR:  #TODO #'180903' #(name of dataset) '18_07_26' #18_07_20logs
-MODEL_RESTORE: '' #TODO ? #'20190416153841365919_deep-dos_db190414crops_NORMAL_sn_patch_gan_trainHN' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
+LOG_DIR: 'train_cleans' #TODO: split the yamls... '180903' #(name of dataset) '18_07_26' #18_07_20logs
+MODEL_RESTORE: '' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'sn_patch_gan' # 'wgan_gp', 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
 PRETRAIN_COARSE_NETWORK: False
@@ -39,6 +39,10 @@ VAL_PSTEPS: 1000 #TODO 2 #10 #500 #250 #1000
 DATA_FLIST:
   # https://github.com/JiahuiYu/progressive_growing_of_gans_tf
   # TODO: dataset
+  db_fmd_cleans190415: [
+    './flists/db_fmd_cleans190414_train.flist', #  last 80% of db_fmd_cleans190414.json
+    './flists/db_fmd_cleans190414_valid.flist'  # first 20% of db_fmd_cleans190414.json (4000 imgs)
+  ]
   db190414crops: [
     './flists/190414crops_train.flist', # text = H,N 
     './flists/190414crops_valid.flist'  # text = O

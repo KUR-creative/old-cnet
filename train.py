@@ -1,5 +1,5 @@
 '''
-python train.py config.yml
+python   train.py config.yml   sender_addr receiver_addr sender_pw 
 '''
 import os
 import sys
@@ -37,11 +37,16 @@ def multigpu_graph_def(model, data, config, gpu_id=0, loss_type='g', masks=None)
 
 from datetime import datetime
 import pprint
-from send_mail import send_mail
+import send_mail
 if __name__ == "__main__":
     try:
+        config_path = sys.argv[1]
+        send_mail.sender_email = sys.argv[2]
+        send_mail.receiver_email = sys.argv[3]
+        send_mail.password = sys.argv[4]
+        send_mail.test()
         #config = ng.Config('inpaint.yml')
-        config = ng.Config(sys.argv[1])
+        config = ng.Config(config_path)
         if config.GPU_ID != -1:
             ng.set_gpus(config.GPU_ID) 
         else:
@@ -178,5 +183,5 @@ if __name__ == "__main__":
         # launch training
         trainer.train()
     finally:
-        send_mail(('system time: ' + str(datetime.now()) 
-                  + '\n\n' +pprint.pformat(config._cfg_dict)) )
+        send_mail.send(('system time: ' + str(datetime.now()) 
+                       + '\n\n' +pprint.pformat(config._cfg_dict)) )

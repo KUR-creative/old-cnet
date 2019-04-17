@@ -41,6 +41,21 @@ if __name__ == "__main__":
     # training data
     with open(config.DATA_FLIST[config.DATASET][0]) as f:
         fnames = f.read().splitlines()
+    
+    fnames = list(filter(
+        lambda p:cv2.imread(p) is not None, fnames
+    ))
+    '''
+    # check None returning img path
+    import funcy as F
+    oxseq = F.rcompose(
+        F.partial(F.map, cv2.imread),
+        F.partial(F.map, lambda im:'x' if(im is None) else 'o'),
+    )(fnames)
+    for path,ox in zip(fnames,oxseq):
+        print(ox,path)
+    exit()
+    '''
     data = ng.data.DataFromFNames(
         fnames, config.IMG_SHAPES, random_crop=config.RANDOM_CROP)
     images = data.data_pipeline(config.BATCH_SIZE)

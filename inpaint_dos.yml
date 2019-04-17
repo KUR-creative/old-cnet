@@ -6,11 +6,11 @@
 #LOG_DIR: 190411expr#'180726' #18_07_20logs #mini #
 #MODEL_RESTORE: '' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
-DATASET:  #TODO #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
+DATASET: db190414crops #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_20crops #'celebahq'  # 'tmnist', 'dtd', 'places2', 'celeba', 'imagenet', 'cityscapes'
 RANDOM_CROP: True # False
 VAL: True #False
-LOG_DIR:  #TODO #'180903' #(name of dataset) '18_07_26' #18_07_20logs
-MODEL_RESTORE: '' #TODO ? #'20190416153841365919_deep-dos_db190414crops_NORMAL_sn_patch_gan_trainHN' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
+LOG_DIR: 'trainHN' #'180903' #(name of dataset) '18_07_26' #18_07_20logs
+MODEL_RESTORE: '20190416153841365919_deep-dos_db190414crops_NORMAL_sn_patch_gan_trainHN' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'sn_patch_gan' # 'wgan_gp', 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
 PRETRAIN_COARSE_NETWORK: False
@@ -27,18 +27,17 @@ PADDING: 'SAME'
 # training
 NUM_GPUS: 1
 GPU_ID: -1  # -1 indicate select any available one, otherwise select gpu ID, e.g. [0,1,3]
-TRAIN_SPE: 10000 #TODO 20 #2000 #40 #10000
+TRAIN_SPE: 10000 #20 #2000 #40 #10000
 MAX_ITERS: 100000000
 VIZ_MAX_OUT: 10
 GRADS_SUMMARY: False
 GRADIENT_CLIP: False
 GRADIENT_CLIP_VALUE: 0.1
-VAL_PSTEPS: 1000 #TODO 2 #10 #500 #250 #1000
+VAL_PSTEPS: 1000 #2 #10 #500 #250 #1000
 
 # data
 DATA_FLIST:
   # https://github.com/JiahuiYu/progressive_growing_of_gans_tf
-  # TODO: dataset
   db190414crops: [
     './flists/190414crops_train.flist', # text = H,N 
     './flists/190414crops_valid.flist'  # text = O
@@ -110,5 +109,5 @@ FEATURE_LOSS_ALPHA: 0.01
 GRAMS_LOSS_ALPHA: 50
 SPATIAL_DISCOUNTING_GAMMA: 0.9
 
-FREE_FORM_MASK: True # TODO False
-MANGA_MASK_DIR: 'masks' # TODO 'test_mask'
+FREE_FORM_MASK: True #False
+MANGA_MASK_DIR: 'masks' #'test_mask'

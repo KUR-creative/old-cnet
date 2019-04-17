@@ -1,4 +1,8 @@
+'''
+python train.py config.yml
+'''
 import os
+import sys
 import glob
 import socket
 import logging
@@ -36,7 +40,8 @@ import pprint
 from send_mail import send_mail
 if __name__ == "__main__":
     try:
-        config = ng.Config('inpaint.yml')
+        #config = ng.Config('inpaint.yml')
+        config = ng.Config(sys.argv[1])
         if config.GPU_ID != -1:
             ng.set_gpus(config.GPU_ID) 
         else:

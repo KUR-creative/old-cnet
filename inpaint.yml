@@ -10,7 +10,7 @@ DATASET: db190414crops #180726imgs #mini #180903_7624imgs #18_07_26imgs #18_07_2
 RANDOM_CROP: True # False
 VAL: True #False
 LOG_DIR: 'trainHN' #'180903' #(name of dataset) '18_07_26' #18_07_20logs
-MODEL_RESTORE: '' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
+MODEL_RESTORE: '20190416153841365919_deep-dos_db190414crops_NORMAL_sn_patch_gan_trainHN' #'20180911103404463284_KUR-LAB-MACHINE_180903_7624imgs_NORMAL_sn_patch_gan_180903' #'20180827093100879693_KUR-LAB-MACHINE_18_07_26imgs_NORMAL_wgan_gp_18_07_26/' #'20180722003949326652_kur-dev-machine_18_07_20crops_NORMAL_wgan_gp_18_07_20logs'  # '20180115220926508503_jyugpu0_places2_NORMAL_wgan_gp_full_model'
 
 GAN: 'sn_patch_gan' # 'wgan_gp', 'dcgan', 'lsgan', 'wgan_gp', 'one_wgan_gp'
 PRETRAIN_COARSE_NETWORK: False

@@ -1,19 +1,27 @@
 import argparse
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+from pathlib import Path
 
 import cv2
 import numpy as np
 import tensorflow as tf
 import neuralgym as ng
+import time
 
 from inpaint_model import InpaintCAModel
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', default='', type=str,
-                    help='The filename of image to be completed.')
-parser.add_argument('--mask', default='', type=str,
-                    help='The filename of mask, value 255 indicates mask.')
-parser.add_argument('--output', default='output.png', type=str,
+#parser.add_argument('--image', default='', type=str,
+                    #help='The filename of image to be completed.')
+parser.add_argument('--imgdir', default='', type=str,
+                    help='The directory name of images to be completed.')
+parser.add_argument('--maskdir', default='', type=str,
+                    help='The directory name of masks, value 255 indicates mask.')
+parser.add_argument('--outdir', default='output.png', type=str,
                     help='Where to write output.')
 parser.add_argument('--checkpoint_dir', default='', type=str,
                     help='The directory of tensorflow checkpoint.')

@@ -15,8 +15,6 @@ from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
-#parser.add_argument('--image', default='', type=str,
-                    #help='The filename of image to be completed.')
 parser.add_argument('--imgdir', default='', type=str,
                     help='The directory name of images to be completed.')
 parser.add_argument('--maskdir', default='', type=str,
@@ -45,15 +43,12 @@ def inpaint_or_oom(image, segmap, complnet, complnet_ckpt_dir,
     mask = binarization(segmap, 0.5)
 
     assert image.shape == mask.shape 
-    #print('origin',image.shape)
 
     org_h, org_w, _ = image.shape
 
     modulo = 8
     image = modulo_padded(image,8)
     mask = modulo_padded(mask,8)
-    #print('Shape of image: {}'.format(image.shape))
-    #print('Shape of image: {}'.format(mask.shape))
 
     image = np.expand_dims(image, 0) # [h,w,c] -> [1,h,w,c]
     mask = np.expand_dims(mask, 0)
@@ -61,14 +56,11 @@ def inpaint_or_oom(image, segmap, complnet, complnet_ckpt_dir,
 
     try:
         result = complnet(input_image)
-        #print('wtf origin',image.shape)
-        #print('wtf result',result.shape)
         assert image.shape == result.shape, \
             '{} != {}'.format(image.shape, result.shape)
         return result[0][:org_h, :org_w, ::-1] #---------- remove padding
     except Exception as e: # ResourceExhaustedError:
-        #logging.error(traceback.format_exc())
-        print((org_h,org_w), 'OOM error in inpainting')
+        print((org_h,org_w), '(Maybe) OOM error while inpainting')
         return None
 
 compl_limit = 657666 #  then.. what is the optimal size?
@@ -97,19 +89,16 @@ def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
         print('compl_limit exceed! img_size =', h*w, '>', compl_limit, '= compl_limit')
 
     if result is None: # exceed compl_limit or OOM
-        #print('----->',h,w)
         if h > w:
             upper = inpaint(img[:h//2,:], mask[:h//2,:], complnet, cnet_dir, kernel) 
             downer= inpaint(img[h//2:,:], mask[h//2:,:], complnet, cnet_dir, kernel)
             result = np.concatenate((upper,downer), axis=0)
-            #print('u',upper.shape, 'd',downer.shape, 'r',result.shape, '+',np.array(upper.shape)+np.array(downer.shape))
             assert img.shape == result.shape,\
                 'img.{} != result.{} in up + down'.format(img.shape,result.shape)
         else:
             left = inpaint(img[:,:w//2], mask[:,:w//2], complnet, cnet_dir, kernel)
             right= inpaint(img[:,w//2:], mask[:,w//2:], complnet, cnet_dir, kernel)
             result = np.concatenate((left,right), axis=1)
-            #print('l',left.shape, 'r',right.shape, 'r',result.shape, '+',np.array(left.shape)+np.array(right.shape))
             assert img.shape == result.shape,\
                 'img.{} != result.{} in left + right'.format(img.shape,result.shape)
     assert img.shape == result.shape,\
@@ -117,12 +106,8 @@ def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
     return result # image inpainted successfully!
 
 def make_complnet(input_image_ph, out_tensor):
-    #def complnet(image, mask):
     def complnet(input_image):
         return sess.run(out_tensor, feed_dict={input_image_ph: input_image})   
-        #image = np.expand_dims(image, 0) # [h,w,c] -> [1,h,w,c]
-        #mask = np.expand_dims(mask, 0)
-        #input_image = np.concatenate([image, mask], axis=2)
     return complnet
 
 import fp
@@ -146,12 +131,12 @@ if __name__ == "__main__":
                                                                              
     model = InpaintCAModel()                                                 
     input_image_ph = tf.placeholder(                                         
-        tf.float32, shape = (1,None,None,3)
+        tf.float32, shape = (1,None,None,3), name = 'INPUT'
     )                                                                    
     output = model.build_server_graph(input_image_ph)                        
     output = (output + 1.) * 127.5                                           
     output = tf.reverse(output, [-1])                                        
-    output = tf.saturate_cast(output, tf.uint8)                              
+    output = tf.saturate_cast(output, tf.uint8, name='OUTPUT')                              
 
     vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)             
     assign_ops = []                                                          
@@ -164,24 +149,12 @@ if __name__ == "__main__":
         assign_ops.append(tf.assign(var, var_value))                         
     sess.run(assign_ops)                                                     
 
-    cnet = make_complnet(input_image_ph, output)
-    '''
-    print('Model loaded.')                                                   
-
     writer = tf.summary.FileWriter('./tmplog')
     writer.add_graph(sess.graph)
     writer.flush()
     writer.close()
-    exit()
 
-    assert image.shape == mask.shape                                     
-                                                                         
-    image = np.expand_dims(image, 0)                                     
-    mask = np.expand_dims(mask, 0)                                       
-    input_image = np.concatenate([image, mask], axis=2)                  
-                                                                         
-    result = sess.run(output, feed_dict={input_image_ph: input_image})   
-    '''
+    cnet = make_complnet(input_image_ph, output)
 
     def mk_outpath(srcpath):
         return str(
@@ -220,119 +193,3 @@ if __name__ == "__main__":
         runtimes.append(runtime)
     print(runtimes)
     print(np.mean(runtimes),'sec')
-    '''
-    cv2.imwrite(args.output, result)
-    cv2.imshow('result',result)
-    cv2.waitKey(0)
-
-    h, w, _ = image.shape
-    grid = 8
-    image = image[:h//grid*grid, :w//grid*grid, :]
-    mask = mask[:h//grid*grid, :w//grid*grid, :]
-    print('Shape of image: {}'.format(image.shape))
-
-    image = np.expand_dims(image, 0)
-    mask = np.expand_dims(mask, 0)
-    input_image = np.concatenate([image, mask], axis=2)
-
-    sess_config = tf.ConfigProto()
-    sess_config.gpu_options.allow_growth = True
-    with tf.Session(config=sess_config) as sess:
-        input_image = tf.constant(input_image, dtype=tf.float32)
-        output = model.build_server_graph(input_image)
-        output = (output + 1.) * 127.5
-        output = tf.reverse(output, [-1])
-        output = tf.saturate_cast(output, tf.uint8)
-        # load pretrained model
-        vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        assign_ops = []
-        for var in vars_list:
-            vname = var.name
-            from_name = vname
-            var_value = tf.contrib.framework.load_variable(
-                args.checkpoint_dir, from_name)
-            assign_ops.append(tf.assign(var, var_value))
-
-        start = time.time() #------------------------------
-
-        sess.run(assign_ops)
-        result = sess.run(output)
-        #print('Model loaded.')
-
-        end = time.time()  #------------------------------
-        print('RunningTime:', end - start)
-
-        cv2.imwrite(args.output, result[0][:, :, ::-1])
-        #print(result)
-        #print(type(result))
-        #print(result.shape)
-        cv2.imshow('result',result[0][:, :, ::-1])
-        cv2.waitKey(0)
-    '''
-
-    #TODO: Use This! from issue in author's repository.
-    # https://github.com/JiahuiYu/generative_inpainting/issues/12
-    '''
-    sess_config = tf.ConfigProto()                                           
-    sess_config.gpu_options.allow_growth = True                              
-    sess = tf.Session(config=sess_config)                                    
-                                                                             
-    model = InpaintCAModel()                                                 
-    input_image_ph = tf.placeholder(                                         
-        tf.float32, shape=(1, args.image_height, args.image_width*2, 3))     
-    output = model.build_server_graph(input_image_ph)                        
-    output = (output + 1.) * 127.5                                           
-    output = tf.reverse(output, [-1])                                        
-    output = tf.saturate_cast(output, tf.uint8)                              
-    vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)             
-    assign_ops = []                                                          
-    for var in vars_list:                                                    
-        vname = var.name                                                     
-        from_name = vname                                                    
-        var_value = tf.contrib.framework.load_variable(                      
-            args.checkpoint_dir, from_name)                                  
-        assign_ops.append(tf.assign(var, var_value))                         
-    sess.run(assign_ops)                                                     
-    print('Model loaded.')                                                   
-                                                                             
-    with open(args.flist, 'r') as f:                                         
-        lines = f.read().splitlines()                                        
-    t = time.time()                                                          
-    for line in lines:                                                   
-        image, mask, out = line.split()                                      
-        base = os.path.basename(mask)                                        
-                                                                             
-        image = cv2.imread(image)                                            
-        mask = cv2.imread(mask)                                              
-        image = cv2.resize(image, (args.image_width, args.image_height))     
-        mask = cv2.resize(mask, (args.image_width, args.image_height))       
-        # cv2.imwrite(out, image*(1-mask/255.) + mask)                       
-        # # continue                                                         
-        # image = np.zeros((128, 256, 3))                                    
-        # mask = np.zeros((128, 256, 3))                                     
-                                                                             
-        assert image.shape == mask.shape                                     
-                                                                             
-        h, w, _ = image.shape                                                
-        grid = 4                                                             
-        image = image[:h//grid*grid, :w//grid*grid, :]                       
-        mask = mask[:h//grid*grid, :w//grid*grid, :]                         
-        print('Shape of image: {}'.format(image.shape))                      
-                                                                             
-        image = np.expand_dims(image, 0)                                     
-        mask = np.expand_dims(mask, 0)                                       
-        input_image = np.concatenate([image, mask], axis=2)                  
-                                                                             
-        # load pretrained model                                              
-        result = sess.run(output, feed_dict={input_image_ph: input_image})   
-        print('Processed: {}'.format(out))                                   
-        cv2.imwrite(out, result[0][:, :, ::-1])                              
-                                                                             
-    print('Time total: {}'.format(time.time() - t)) 
-    '''
-
-    #TODO: and None,None sized input image
-    # https://github.com/JiahuiYu/generative_inpainting/issues/194
-    '''
-    '''
-

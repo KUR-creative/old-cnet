@@ -103,11 +103,6 @@ def inpaint(img, mask, complnet, dilate_kernel=None):
         'img.{} != result.{} in merged'.format(img.shape,result.shape)
     return result # image inpainted successfully!
 
-def make_complnet(input_image_ph, out_tensor):
-    def complnet(input_image):
-        return sess.run(out_tensor, feed_dict={input_image_ph: input_image})   
-    return complnet
-
 import fp
 from futils import human_sorted,file_pathseq
 if __name__ == "__main__":
@@ -123,6 +118,9 @@ if __name__ == "__main__":
     mask_paths = fp.pipe(file_pathseq,human_sorted)(args.maskdir)
 
     # build inference model
+    # loading_time: 2.5587990283966064 sec
+    start = time.time() #------------------------------
+    '''
     sess_config = tf.ConfigProto()                                           
     sess_config.gpu_options.allow_growth = True                              
     sess = tf.Session(config=sess_config)                                    
@@ -146,13 +144,34 @@ if __name__ == "__main__":
         )                                                                
         assign_ops.append(tf.assign(var, var_value))                         
     sess.run(assign_ops)                                                     
-
+ 
     writer = tf.summary.FileWriter('./tmplog')
     writer.add_graph(sess.graph)
     writer.flush()
     writer.close()
 
     cnet = make_complnet(input_image_ph, output)
+    cnet = lambda input_image: sess.run(
+        output, feed_dict={input_image_ph: input_image}
+    )
+    '''
+    # load inference model 
+    # loading_time: 0.5577731132507324 sec
+    model_path = './dset4paper/cnet.pb'
+
+    graph_def = tf.GraphDef()
+    with tf.gfile.GFile(model_path, 'rb') as f:
+        graph_def.ParseFromString(f.read())
+        tf.import_graph_def(graph_def, name='')
+
+    sess = tf.Session()
+    cnet_in  = sess.graph.get_tensor_by_name('INPUT:0')
+    cnet_out = sess.graph.get_tensor_by_name('OUTPUT:0')
+    cnet = lambda input_image: sess.run(
+        cnet_out, feed_dict={cnet_in:input_image}
+    )
+    end = time.time()  #------------------------------
+    print('loading_time:', end - start, 'sec')
 
     def mk_outpath(srcpath):
         return str(

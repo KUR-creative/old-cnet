@@ -39,12 +39,10 @@ def modulo_padded(img, modulo=16):
     elif len(img.shape) == 2:
         return np.pad(img, [(0,h_padding),(0,w_padding)], mode='reflect')
 
-def inpaint_or_oom(img, segmap, complnet, complnet_ckpt_dir, 
+def inpaint_or_oom(image, segmap, complnet, complnet_ckpt_dir, 
                    dilate_kernel=None):
     ''' If image is too big, return None '''
-    image = img.copy()
-    mask = segmap.copy() #TODO: copy needed?? check it!
-    mask = binarization(mask, 0.5)
+    mask = binarization(segmap, 0.5)
 
     assert image.shape == mask.shape 
     #print('origin',image.shape)

@@ -37,8 +37,7 @@ def modulo_padded(img, modulo=16):
     elif len(img.shape) == 2:
         return np.pad(img, [(0,h_padding),(0,w_padding)], mode='reflect')
 
-def inpaint_or_oom(image, segmap, complnet, complnet_ckpt_dir, 
-                   dilate_kernel=None):
+def inpaint_or_oom(image, segmap, complnet, dilate_kernel=None):
     ''' If image is too big, return None '''
     mask = binarization(segmap, 0.5)
 
@@ -67,17 +66,16 @@ compl_limit = 657666 #  then.. what is the optimal size?
 #compl_limit = 1525920 # it didn't crash, but SLOWER! why..?
 #lab-machine #1525920
 #compl_limit = 9999999 # 
-def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
+def inpaint(img, mask, complnet, dilate_kernel=None):
     ''' oom-free inpainting '''
     global compl_limit
 
-    cnet_dir = complnet_ckpt_dir
     kernel = dilate_kernel
 
     h,w = img.shape[:2]
     result = None
     if h*w < compl_limit:
-        result = inpaint_or_oom(img, mask, complnet, cnet_dir, dilate_kernel=kernel)
+        result = inpaint_or_oom(img, mask, complnet, dilate_kernel=kernel)
         if result is None: # compl_limit: Ok but OOM occur!
             compl_limit = h*w
             #print('compl_limit =', compl_limit, 'updated!')
@@ -90,14 +88,14 @@ def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
 
     if result is None: # exceed compl_limit or OOM
         if h > w:
-            upper = inpaint(img[:h//2,:], mask[:h//2,:], complnet, cnet_dir, kernel) 
-            downer= inpaint(img[h//2:,:], mask[h//2:,:], complnet, cnet_dir, kernel)
+            upper = inpaint(img[:h//2,:], mask[:h//2,:], complnet, kernel) 
+            downer= inpaint(img[h//2:,:], mask[h//2:,:], complnet, kernel)
             result = np.concatenate((upper,downer), axis=0)
             assert img.shape == result.shape,\
                 'img.{} != result.{} in up + down'.format(img.shape,result.shape)
         else:
-            left = inpaint(img[:,:w//2], mask[:,:w//2], complnet, cnet_dir, kernel)
-            right= inpaint(img[:,w//2:], mask[:,w//2:], complnet, cnet_dir, kernel)
+            left = inpaint(img[:,:w//2], mask[:,:w//2], complnet, kernel)
+            right= inpaint(img[:,w//2:], mask[:,w//2:], complnet, kernel)
             result = np.concatenate((left,right), axis=1)
             assert img.shape == result.shape,\
                 'img.{} != result.{} in left + right'.format(img.shape,result.shape)
@@ -164,7 +162,7 @@ if __name__ == "__main__":
 
     def inpainted_time(image, mask):
         start = time.time() #------------------------------
-        result = inpaint(image, mask, cnet, args.checkpoint_dir)
+        result = inpaint(image, mask, cnet)
         end = time.time()  #------------------------------
         print('running_time:', end - start)
         return result, end - start

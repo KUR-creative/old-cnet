@@ -315,7 +315,7 @@ def contextual_attention(f, b, mask=None, ksize=3, stride=1, rate=1,
     # downscaling foreground option: downscaling both foreground and
     # background for matching and use original background for reconstruction.
     f = resize(f, scale=1./rate, func=tf.image.resize_nearest_neighbor, dynamic=True)
-    b = resize(b, to_shape=[int(raw_int_bs[1]/rate), int(raw_int_bs[2]/rate)], func=tf.image.resize_nearest_neighbor, dynamic=True)  # https://github.com/tensorflow/tensorflow/issues/11651
+    b = resize(b, scale=1. / rate, func=tf.image.resize_nearest_neighbor, dynamic=True)
     if mask is not None:
         mask = resize(mask, scale=1./rate, func=tf.image.resize_nearest_neighbor, dynamic=True)
     fs = tf.shape(f)

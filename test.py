@@ -43,14 +43,13 @@ def inpaint_or_oom(img, segmap, complnet, complnet_ckpt_dir,
                    dilate_kernel=None):
     ''' If image is too big, return None '''
     image = img.copy()
-    mask = segmap.copy()
+    mask = segmap.copy() #TODO: copy needed?? check it!
     mask = binarization(mask, 0.5)
 
     assert image.shape == mask.shape 
     #print('origin',image.shape)
 
     org_h, org_w, _ = image.shape
-    # TODO:pad
 
     modulo = 8
     image = modulo_padded(image,8)
@@ -62,44 +61,22 @@ def inpaint_or_oom(img, segmap, complnet, complnet_ckpt_dir,
     mask = np.expand_dims(mask, 0)
     input_image = np.concatenate([image, mask], axis=2)
 
-    sess_config = tf.ConfigProto()
-    with tf.Session(config=sess_config) as sess:
-        input_image = tf.constant(input_image, dtype=tf.float32) #const
-        output = complnet.build_server_graph(input_image,reuse=tf.AUTO_REUSE)
-        output = (output + 1.) * 127.5
-        output = tf.reverse(output, [-1])
-        output = tf.saturate_cast(output, tf.uint8)  # maybe output of entire network?
-        # load pretrained complnet
-        vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        assign_ops = []
-        for var in vars_list:
-            vname = var.name
-            from_name = vname
-            var_value = tf.contrib.framework.load_variable(complnet_ckpt_dir, from_name)
-            assign_ops.append(tf.assign(var, var_value))
-        sess.run(assign_ops)
+    try:
+        result = complnet(input_image)
+        #print('wtf origin',image.shape)
+        #print('wtf result',result.shape)
+        assert image.shape == result.shape, \
+            '{} != {}'.format(image.shape, result.shape)
+        return result[0][:org_h, :org_w, ::-1] #---------- remove padding
+    except Exception as e: # ResourceExhaustedError:
+        #logging.error(traceback.format_exc())
+        print((org_h,org_w), 'OOM error in inpainting')
+        return None
 
-        '''
-        writer = tf.summary.FileWriter('./tmplog')
-        writer.add_graph(sess.graph)
-        writer.flush()
-        writer.close()
-        exit()
-        '''
-        #print('Model loaded.')
-        try:
-            result = sess.run(output)
-            #print('wtf origin',image.shape)
-            #print('wtf result',result.shape)
-            assert image.shape == result.shape, \
-                '{} != {}'.format(image.shape, result.shape)
-            return result[0][:org_h, :org_w, ::-1] #---------- remove padding
-        except Exception as e: # ResourceExhaustedError:
-            logging.error(traceback.format_exc())
-            print((org_h,org_w), 'OOM error in inpainting')
-            return None
-
-compl_limit = 657666 #lab-machine #1525920
+compl_limit = 657666 #  then.. what is the optimal size?
+#compl_limit = 1525920 # it didn't crash, but SLOWER! why..?
+#lab-machine #1525920
+#compl_limit = 9999999 # 
 def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
     ''' oom-free inpainting '''
     global compl_limit
@@ -114,8 +91,9 @@ def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
         if result is None: # compl_limit: Ok but OOM occur!
             compl_limit = h*w
             #print('compl_limit =', compl_limit, 'updated!')
-        assert img.shape == result.shape,\
-            'img.{} != result.{} in no limit'.format(img.shape,result.shape)
+        else:
+            assert img.shape == result.shape,\
+                'img.{} != result.{} in no limit'.format(img.shape,result.shape)
     else:
         pass
         print('compl_limit exceed! img_size =', h*w, '>', compl_limit, '= compl_limit')
@@ -140,6 +118,14 @@ def inpaint(img, mask, complnet, complnet_ckpt_dir, dilate_kernel=None):
         'img.{} != result.{} in merged'.format(img.shape,result.shape)
     return result # image inpainted successfully!
 
+def make_complnet(input_image_ph, out_tensor):
+    #def complnet(image, mask):
+    def complnet(input_image):
+        return sess.run(out_tensor, feed_dict={input_image_ph: input_image})   
+        #image = np.expand_dims(image, 0) # [h,w,c] -> [1,h,w,c]
+        #mask = np.expand_dims(mask, 0)
+        #input_image = np.concatenate([image, mask], axis=2)
+    return complnet
 
 import fp
 from futils import human_sorted,file_pathseq
@@ -179,29 +165,25 @@ if __name__ == "__main__":
         )                                                                
         assign_ops.append(tf.assign(var, var_value))                         
     sess.run(assign_ops)                                                     
+
+    cnet = make_complnet(input_image_ph, output)
+    '''
     print('Model loaded.')                                                   
+
     writer = tf.summary.FileWriter('./tmplog')
     writer.add_graph(sess.graph)
     writer.flush()
     writer.close()
     exit()
 
-    # ---------------------
     assert image.shape == mask.shape                                     
-                                                                         
-    h, w, _ = image.shape                                                
-    grid = 4                                                             
-    image = image[:h//grid*grid, :w//grid*grid, :]                       
-    mask = mask[:h//grid*grid, :w//grid*grid, :]                         
-    print('Shape of image: {}'.format(image.shape))                      
                                                                          
     image = np.expand_dims(image, 0)                                     
     mask = np.expand_dims(mask, 0)                                       
     input_image = np.concatenate([image, mask], axis=2)                  
                                                                          
     result = sess.run(output, feed_dict={input_image_ph: input_image})   
-    # ---------------------
-
+    '''
 
     def mk_outpath(srcpath):
         return str(
@@ -211,7 +193,7 @@ if __name__ == "__main__":
 
     def inpainted_time(image, mask):
         start = time.time() #------------------------------
-        result = inpaint(image, mask, model, args.checkpoint_dir)
+        result = inpaint(image, mask, cnet, args.checkpoint_dir)
         end = time.time()  #------------------------------
         print('running_time:', end - start)
         return result, end - start

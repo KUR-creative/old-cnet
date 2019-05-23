@@ -79,11 +79,13 @@ def inpaint_or_oom(img, segmap, complnet, complnet_ckpt_dir,
             assign_ops.append(tf.assign(var, var_value))
         sess.run(assign_ops)
 
+        '''
         writer = tf.summary.FileWriter('./tmplog')
         writer.add_graph(sess.graph)
         writer.flush()
         writer.close()
         exit()
+        '''
         #print('Model loaded.')
         try:
             result = sess.run(output)
@@ -147,18 +149,14 @@ if __name__ == "__main__":
 
     model = InpaintCAModel()
 
-    '''
-    args.imgdir = './dset4paper/test/imgs/'
-    args.maskdir= './dset4paper/test/masks/'
-    args.outdir = './dset4paper/test/results'
+    args.imgdir = './dset4paper/tmp/imgs/'
+    args.maskdir= './dset4paper/tmp/masks/'
+    args.outdir = './dset4paper/tmp/results'
     args.checkpoint_dir = './model_logs/hasT_350k/'
-    '''
 
     img_paths = fp.pipe(file_pathseq,human_sorted)(args.imgdir)
     mask_paths = fp.pipe(file_pathseq,human_sorted)(args.maskdir)
 
-    print('wtf i',img_paths)
-    print('wtf m',mask_paths)
     def mk_outpath(srcpath):
         return str(
             Path(args.outdir) / Path(srcpath).parts[-1]

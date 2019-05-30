@@ -106,7 +106,7 @@ def inpaint(img, mask, complnet, dilate_kernel=None):
 import fp
 from futils import human_sorted,file_pathseq
 if __name__ == "__main__":
-    ng.get_gpus(1,False)
+    #ng.get_gpus(1,False)
     args = parser.parse_args()
 
     args.imgdir = './dset4paper/tmp/imgs/'

@@ -4,6 +4,11 @@ import cv2
 import numpy as np
 from pathlib import Path
 import time
+from skimage.metrics import structural_similarity
+
+def ssim(img1, img2):
+    return structural_similarity(img1, img2, multichannel=True)#[0]
+    
 def l1loss(img1, img2): # 0.0 < img[y][x] < 1.0
     #assert img1.max() <= 1.0 and img2.max() <= 1.0
     assert img1.shape == img2.shape, \
@@ -35,13 +40,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.imgdir = './dset4paper/imgs/'
-    #args.resdir = './dset4paper/hasT_later/'
     args.resdir = './dset4paper/noT_later/'
+    #args.resdir = './dset4paper/hasT_later/'
     img_paths = fp.pipe(file_pathseq,human_sorted)(args.imgdir)
     res_paths = fp.pipe(file_pathseq,human_sorted)(args.resdir)
 
     originseq1 = fp.map(cv2.imread, img_paths)
     originseq2 = fp.map(cv2.imread, img_paths)
+    originseq3 = fp.map(cv2.imread, img_paths)
     originseqf = fp.pipe(
         fp.cmap(cv2.imread),
         fp.cmap(lambda im: im.astype(np.float32) / 255.0)
@@ -49,6 +55,7 @@ if __name__ == "__main__":
 
     resultseq1 = fp.map(cv2.imread, res_paths)
     resultseq2 = fp.map(cv2.imread, res_paths)
+    resultseq3 = fp.map(cv2.imread, res_paths)
     resultseqf = fp.pipe(
         fp.cmap(cv2.imread),
         fp.cmap(lambda im: im.astype(np.float32) / 255.0)
@@ -62,12 +69,14 @@ if __name__ == "__main__":
 
     l1losses = fp.lmap(l1loss, originseq1,resultseq1) 
     l2losses = fp.lmap(l2loss, originseq2,resultseq2) 
+    ssims    = fp.lmap(ssim,   originseq3,resultseq3) 
     psnrs    = fp.lmap(psnr,   originseqf,resultseqf) 
     l1losses += [ np.mean(l1losses) ]
     l2losses += [ np.mean(l2losses) ]
+    ssims    += [ np.mean(ssims) ]
     psnrs    += [ np.mean(psnrs) ]
-    rows = zip(img_ids, l1losses, l2losses, psnrs)
-    header = [  'id',  'L1 loss','L2 loss','PSNR']
+    rows = zip(img_ids, l1losses, l2losses, ssims, psnrs)
+    header = [  'id',  'L1 loss','L2 loss', 'ssims', 'PSNR']
     #means = fp.lmap(np.mean, [l1losses, l2losses, psnrs])
 
     df = pd.DataFrame(data=rows, columns=header)

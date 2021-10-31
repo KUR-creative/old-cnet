@@ -36,32 +36,33 @@ def freeze_session(session, keep_var_names=None, output_names=None, clear_device
 
 checkpoint_dir = './model_logs/hasT_350k/'
 
-sess_config = tf.ConfigProto()                                           
-sess_config.gpu_options.allow_growth = True                              
-sess = tf.Session(config=sess_config)                                    
-                                                                         
-model = InpaintCAModel()                                                 
-input_image_ph = tf.placeholder(                                         
-    tf.float32, shape = (1,None,None,3), name = 'INPUT'
-)                                                                    
-output = model.build_server_graph(input_image_ph)                        
-output = (output + 1.) * 127.5                                           
-output = tf.reverse(output, [-1])                                        
-output = tf.saturate_cast(output, tf.uint8, name='OUTPUT')                              
+sess_config = tf.ConfigProto()
+sess_config.gpu_options.allow_growth = True
+sess = tf.Session(config=sess_config)
 
-vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)             
-assign_ops = []                                                          
-for var in vars_list:                                                    
-    vname = var.name                                                     
-    from_name = vname                                                    
-    var_value = tf.contrib.framework.load_variable(                      
+model = InpaintCAModel()
+input_image_ph = tf.placeholder(
+    tf.float32, shape = (1,None,None,3), name = 'INPUT'
+)
+output = model.build_server_graph(input_image_ph)
+output = (output + 1.) * 127.5
+output = tf.reverse(output, [-1])
+output = tf.saturate_cast(output, tf.uint8, name='OUTPUT')
+
+vars_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+assign_ops = []
+for var in vars_list:
+    vname = var.name
+    from_name = vname
+    var_value = tf.contrib.framework.load_variable(
         checkpoint_dir, from_name
-    )                                                                
-    assign_ops.append(tf.assign(var, var_value))                         
-sess.run(assign_ops)                                                     
+    )
+    assign_ops.append(tf.assign(var, var_value))
+sess.run(assign_ops)
 
 frozen_graph = freeze_session(
     sess, output_names=['OUTPUT']
 )
 
-tf.io.write_graph(frozen_graph, './dset4paper/', 'cnet.pb', as_text=False)
+#tf.io.write_graph(frozen_graph, './dset4paper/', 'cnet.pb', as_text=False)
+tf.io.write_graph(frozen_graph, './dset4paper/', 'cnetHasT.pb', as_text=False)

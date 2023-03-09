@@ -1,4 +1,20 @@
-# Generative Image Inpainting with Contextual Attention
+# Generative Image Inpainting with Contextual Attention(CA)
+
+## 수정한 이유
+이 레포를 만든 18년도 당시, CA에서 더 발전된 모델(GC)이 [논문](https://arxiv.org/abs/1806.03589)으로는 있었으나 구현체는 공개되지 않았었습니다.
+GC는 자유로운 형식의 마스크로 학습이 가능했으며, Discriminator에 Spectral Normalization을 적용하여 더 안정적인 적대적 학습(GAN)이 가능하였습니다.
+
+![szmc architecture](https://github.com/KUR-creative/SickZil-Machine/raw/master/doc/szmc-structure-eng.png)
+이 레포로 학습한 모델이 현재 [식질머신](https://github.com/KUR-creative/SickZil-Machine)의 ComplNet입니다.
+
+## 수정한 부분
+[Generator](https://github.com/KUR-creative/old-cnet/blob/4f155bb4935bf4605b288cf44137196284f2edc0/inpaint_model.py#L30)
+- 논문을 참고하여 Generator를 [Gated Convolution](https://arxiv.org/abs/1806.03589)으로 변경하였습니다.
+
+[Discriminator](https://github.com/KUR-creative/old-cnet/blob/4f155bb4935bf4605b288cf44137196284f2edc0/inpaint_model.py#L236)
+- Spectral Normalization을 적용하였습니다.
+
+---
 
 [CVPR 2018 Paper](https://arxiv.org/abs/1801.07892) | [ArXiv](https://arxiv.org/abs/1801.07892) | [Project](http://jiahuiyu.com/deepfill) | [Demo](http://jiahuiyu.com/deepfill) | [YouTube](https://youtu.be/xz1ZvcdhgQ0) | [BibTex](#citing)
 
